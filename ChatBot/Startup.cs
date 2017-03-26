@@ -15,6 +15,7 @@ using ChatBot.Service;
 using ChatBot.Service.Abstract;
 using Newtonsoft.Json.Serialization;
 using IMembershipService = ChatBot.Service.IMembershipService;
+using Microsoft.AspNetCore.Cors;
 
 namespace ChatBot
 {
@@ -49,7 +50,7 @@ namespace ChatBot
         // For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-           string sqlConnectionString = Configuration["ConnectionStrings:DefaultConnection"];
+            string sqlConnectionString = Configuration["ConnectionStrings:DefaultConnection"];
             bool useInMemoryProvider = bool.Parse(Configuration["Data:ChatBotDBConnection:InMemoryProvider"]);
 
             services.AddDbContext<ChatBotDbContext>(options => options.UseSqlServer(@"Data Source=DESKTOP-SD7L5A2\PC;Initial Catalog=ChatBotDB;Integrated Security=False;User Id=sa;Password=123456;MultipleActiveResultSets=True;"));
@@ -63,7 +64,7 @@ namespace ChatBot
             services.AddScoped<IBotDomainRepository, BotDomainRepository>();
 
 
-            // Services
+            //Services
 
             services.AddScoped<IMembershipService, MembershipService>();
             services.AddScoped<IEncryptionService, EncryptionService>();
@@ -71,7 +72,14 @@ namespace ChatBot
             services.AddAuthentication();
 
             services.AddCors();
-
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("CorsPolicy",
+            //        builder => builder.AllowAnyOrigin()
+            //        .AllowAnyMethod()
+            //        .AllowAnyHeader()
+            //        .AllowCredentials());
+            //});
             //  Polices
             services.AddAuthorization(options =>
             {
@@ -101,7 +109,7 @@ namespace ChatBot
         {
             // this will serve up wwwroot
             app.UseStaticFiles();
-
+           // app.UseCors("CorsPolicy");
             app.UseCors(builder =>
               builder.AllowAnyOrigin()
               .AllowAnyHeader()
@@ -116,7 +124,7 @@ namespace ChatBot
             });
 
             // Custom authentication middleware
-            app.UseMiddleware<AuthMiddleware>();
+           // app.UseMiddleware<AuthMiddleware>();
 
             // Add MVC to the request pipeline.
             app.UseMvc(routes =>
