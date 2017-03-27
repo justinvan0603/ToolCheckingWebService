@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using ChatBot.Data.Respositories;
 using ChatBot.Model.Models;
 
@@ -34,7 +35,7 @@ namespace ChatBot.Service
 
         public IEnumerable<BOT_DOMAIN> GetAll()
         {
-            return _botDomainRepository.GetAll();
+            return _botDomainRepository.GetAll().Where(x => x.Status);
         }
 
         public BOT_DOMAIN GetById(int id)

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.IO;
+using System.Net;
 using ChatBot.Data;
 using ChatBot.Data.Infrastructure;
 using ChatBot.Data.Respositories;
@@ -16,6 +17,8 @@ using ChatBot.Service.Abstract;
 using Newtonsoft.Json.Serialization;
 using IMembershipService = ChatBot.Service.IMembershipService;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 
 namespace ChatBot
 {
@@ -114,6 +117,24 @@ namespace ChatBot
               builder.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod());
+
+            app.UseExceptionHandler(
+             builder =>
+             {
+                 builder.Run(
+                   async context =>
+                   {
+                       context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                       context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+
+                       var error = context.Features.Get<IExceptionHandlerFeature>();
+                       if (error != null)
+                       {
+                           context.Response.AddApplicationError(error.Error.Message);
+                           await context.Response.WriteAsync(error.Error.Message).ConfigureAwait(false);
+                       }
+                   });
+             });
 
             AutoMapperConfiguration.Configure();
 

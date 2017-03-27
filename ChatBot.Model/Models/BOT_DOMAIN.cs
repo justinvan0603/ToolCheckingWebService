@@ -18,5 +18,6 @@ namespace ChatBot.Model.Models
         public int DOMAIN_ID { get; set; }
         public string DOMAIN { get; set; }
         public Nullable<int> RECORD_STATUS { get; set; }
+
     }
 }

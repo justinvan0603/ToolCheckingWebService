@@ -25,28 +25,39 @@ namespace ChatBot.Controllers
             _botDomainService = botDomainService;
             _loggingRepository = loggingRepository;
         }
-
-
-        public IEnumerable<DomainViewModel> Get(string DOMAIN_like="", int _page = 1, int _limit = 20, int _start=1, int _end=1 )
+        int _page = 1;
+        int _pageSize = 8;
+        public IEnumerable<DomainViewModel> Get()
         {
-             IEnumerable<DomainViewModel> domainVm = null;
-           // PaginationSet<DomainViewModel> pagedSet = null;
+
+            var pagination = Request.Headers["Pagination"];
+
+            if (!string.IsNullOrEmpty(pagination))
+            {
+                string[] vals = pagination.ToString().Split(',');
+                int.TryParse(vals[0], out _page);
+                int.TryParse(vals[1], out _pageSize);
+            }
+
+
+            IEnumerable<DomainViewModel> domainVm = null;
+            // PaginationSet<DomainViewModel> pagedSet = null;
             try
             {
                 // int totalRow = 0;
 
-                var model = _botDomainService.GetAll(DOMAIN_like);
+                var model = _botDomainService.GetAll();
                 //totalRow = domains.Count();
                 //var query = domains.OrderByDescending(x => x.CreatedDate).Skip(page * pageSize).Take(pageSize);
 
                 int currentPage = _page;
-                int currentPageSize = _limit;
+                int currentPageSize = _pageSize;
 
                 var totalRecord = model.Count();
-                var totalPages = (int)Math.Ceiling((double)totalRecord / _limit);
+                var totalPages = (int)Math.Ceiling((double)totalRecord / _pageSize);
 
-                var domains = model.Skip((currentPage-1) * currentPageSize).Take(currentPageSize);
-               // IEnumerable<DomainViewModel> domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
+                var domains = model.Skip((currentPage - 1) * currentPageSize).Take(currentPageSize);
+                // IEnumerable<DomainViewModel> domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
                 domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
 
                 //pagedSet = new PaginationSet<DomainViewModel>()
@@ -56,6 +67,7 @@ namespace ChatBot.Controllers
                 //    TotalPages = (int)Math.Ceiling((decimal)totalRecord / currentPageSize),
                 //    Items = domainVm
                 //};
+                Response.AddPagination(_page, _pageSize, totalRecord, totalPages);
             }
             catch (Exception ex)
             {
@@ -64,6 +76,45 @@ namespace ChatBot.Controllers
             }
             return domainVm;
         }
+
+        //public IEnumerable<DomainViewModel> Get(string DOMAIN_like="", int _page = 1, int _limit = 20, int _start=1, int _end=1 )
+        //{
+        //     IEnumerable<DomainViewModel> domainVm = null;
+        //   // PaginationSet<DomainViewModel> pagedSet = null;
+        //    try
+        //    {
+        //        // int totalRow = 0;
+
+        //        var model = _botDomainService.GetAll(DOMAIN_like);
+        //        //totalRow = domains.Count();
+        //        //var query = domains.OrderByDescending(x => x.CreatedDate).Skip(page * pageSize).Take(pageSize);
+
+        //        int currentPage = _page;
+        //        int currentPageSize = _limit;
+
+        //        var totalRecord = model.Count();
+        //        var totalPages = (int)Math.Ceiling((double)totalRecord / _limit);
+
+        //        var domains = model.Skip((currentPage-1) * currentPageSize).Take(currentPageSize);
+        //       // IEnumerable<DomainViewModel> domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
+        //        domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
+
+        //        //pagedSet = new PaginationSet<DomainViewModel>()
+        //        //{
+        //        //    Page = currentPage,
+        //        //    TotalCount = totalPages,
+        //        //    TotalPages = (int)Math.Ceiling((decimal)totalRecord / currentPageSize),
+        //        //    Items = domainVm
+        //        //};
+        //        Response.AddPagination(_page, _limit, totalRecord, totalPages);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
+        //        _loggingRepository.Commit();
+        //    }
+        //    return domainVm;
+        //}
 
 
         //public IEnumerable<DomainViewModel> Get()

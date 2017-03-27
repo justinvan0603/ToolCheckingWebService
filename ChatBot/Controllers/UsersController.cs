@@ -23,7 +23,7 @@ namespace ChatBot.Controllers
             DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
             //var rs = await context.Database.ExecuteSqlCommandAsync("Users_Search @p0", cancellationToken: CancellationToken.None,parameters: new[] {"thieu1234" });
             //int x = 1;
-            var result = await context.Users.FromSql("Users_Search @p0", "thieu1234").ToArrayAsync();
+            var result = await context.Users.FromSql("Users_Search @p0", "thieu1234").ToListAsync();
             int a = 5;
             return result;
             //UserClient client = new UserClient();
