@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ChatBot.Models
 {
-    public partial class Users
+    public class UserObject
     {
         public int Id { get; set; }
         public string Username { get; set; }
@@ -22,6 +24,7 @@ namespace ChatBot.Models
         public string CheckerId { get; set; }
         public string EditorId { get; set; }
         public string Apptoken { get; set; }
-
+        public string Domain { get; set; }
+        public string DomainDesc { get; set; }
     }
 }

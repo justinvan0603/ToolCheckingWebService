@@ -20,11 +20,11 @@ namespace ChatBot.Controllers
     {
         IBotDomainService _botDomainService;
         readonly ILoggingRepository _loggingRepository;
-        public DomainsController(IBotDomainService botDomainService, ILoggingRepository loggingRepository)
-        {
-            _botDomainService = botDomainService;
-            _loggingRepository = loggingRepository;
-        }
+        //public DomainsController(IBotDomainService botDomainService, ILoggingRepository loggingRepository)
+        //{
+        //    _botDomainService = botDomainService;
+        //    _loggingRepository = loggingRepository;
+        //}
         int _page = 1;
         int _pageSize = 8;
         public IEnumerable<DomainViewModel> Get()

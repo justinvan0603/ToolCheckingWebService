@@ -12,16 +12,16 @@ namespace ChatBot.Controllers
 
         public HomeController(IBotDomainService botDomainService)
         {
-            _botDomainService = botDomainService;
+            //_botDomainService = botDomainService;
         }
 
 
         // GET: /<controller>/
         public IActionResult Index()
         {
-            _botDomainService.GetAll();
+          //  _botDomainService.GetAll();
 
-            var x = _botDomainService.GetAll().ToList();
+            //var x = _botDomainService.GetAll().ToList();
             int a = 5;
             return View();
         }
