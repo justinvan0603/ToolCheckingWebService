@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using ChatBot.Data.Infrastructure;
+using ChatBot.Infrastructure;
+using ChatBot.Infrastructure.Abstract;
 using ChatBot.Infrastructure.Core;
+using ChatBot.Infrastructure.MD5Encryption;
 using ChatBot.Model.Models;
-using ChatBot.Service.Abstract;
+using ChatBot.Models;
 using ChatBot.ViewModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -23,39 +28,28 @@ namespace ChatBot.Controllers
 
         public AccountController(IMembershipService membershipService,
             IUserRepository userRepository,
-            ILoggingRepository errorRepository)
+            ILoggingRepository _errorRepository)
         {
             _membershipService = membershipService;
             _userRepository = userRepository;
-            _loggingRepository = errorRepository;
+            _loggingRepository = _errorRepository;
         }
-
 
         [HttpPost("authenticate")]
         public async Task<IActionResult> Login([FromBody] LoginViewModel user)
         {
-            IActionResult result = new ObjectResult(false);
-            GenericResult authenticationResult = null;
+            IActionResult _result = new ObjectResult(false);
+            GenericResult _authenticationResult = null;
 
             try
             {
-                MembershipContext userContext = _membershipService.ValidateUser(user.Username, user.Password);
-
-                if (userContext.User != null)
+                DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+                string password = MD5Encoder.MD5Hash(user.Password);
+                string command = $"dbo.Users_CheckLogin @p_USERNAME = '{user.Username}',@p_PASSWORD='{password}',@p_TOKEN='{null}'";
+                var result = await context.Database.ExecuteSqlCommandAsync(command, cancellationToken: CancellationToken.None);
+                if (result==1)
                 {
-                    IEnumerable<Role> roles = _userRepository.GetUserRoles(user.Username);
-                    List<Claim> claims = new List<Claim>();
-                    foreach (Role role in roles)
-                    {
-                        Claim claim = new Claim(ClaimTypes.Role, "Admin", ClaimValueTypes.String, user.Username);
-                        claims.Add(claim);
-                    }
-                    await HttpContext.Authentication.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                        new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
-                        new Microsoft.AspNetCore.Http.Authentication.AuthenticationProperties { IsPersistent = user.RememberMe });
-
-
-                    authenticationResult = new GenericResult()
+                    _authenticationResult = new GenericResult()
                     {
                         Succeeded = true,
                         Message = "Authentication succeeded"
@@ -63,7 +57,7 @@ namespace ChatBot.Controllers
                 }
                 else
                 {
-                    authenticationResult = new GenericResult()
+                    _authenticationResult = new GenericResult()
                     {
                         Succeeded = false,
                         Message = "Authentication failed"
@@ -72,7 +66,7 @@ namespace ChatBot.Controllers
             }
             catch (Exception ex)
             {
-                authenticationResult = new GenericResult()
+                _authenticationResult = new GenericResult()
                 {
                     Succeeded = false,
                     Message = ex.Message
@@ -82,9 +76,67 @@ namespace ChatBot.Controllers
                 _loggingRepository.Commit();
             }
 
-            result = new ObjectResult(authenticationResult);
-            return result;
+            _result = new ObjectResult(_authenticationResult);
+            return _result;
         }
+
+        //Login theo codefirst
+
+
+        //[HttpPost("authenticate")]
+        //public async Task<IActionResult> Login([FromBody] LoginViewModel user)
+        //{
+        //    IActionResult _result = new ObjectResult(false);
+        //    GenericResult _authenticationResult = null;
+
+        //    try
+        //    {
+        //        MembershipContext _userContext = _membershipService.ValidateUser(user.Username, user.Password);
+
+        //        if (_userContext.User != null)
+        //        {
+        //            IEnumerable<Role> _roles = _userRepository.GetUserRoles(user.Username);
+        //            List<Claim> _claims = new List<Claim>();
+        //            foreach (Role role in _roles)
+        //            {
+        //                Claim _claim = new Claim(ClaimTypes.Role, "Admin", ClaimValueTypes.String, user.Username);
+        //                _claims.Add(_claim);
+        //            }
+        //            await HttpContext.Authentication.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+        //                new ClaimsPrincipal(new ClaimsIdentity(_claims, CookieAuthenticationDefaults.AuthenticationScheme)),
+        //                new Microsoft.AspNetCore.Http.Authentication.AuthenticationProperties { IsPersistent = user.RememberMe });
+
+
+        //            _authenticationResult = new GenericResult()
+        //            {
+        //                Succeeded = true,
+        //                Message = "Authentication succeeded"
+        //            };
+        //        }
+        //        else
+        //        {
+        //            _authenticationResult = new GenericResult()
+        //            {
+        //                Succeeded = false,
+        //                Message = "Authentication failed"
+        //            };
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _authenticationResult = new GenericResult()
+        //        {
+        //            Succeeded = false,
+        //            Message = ex.Message
+        //        };
+
+        //        _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
+        //        _loggingRepository.Commit();
+        //    }
+
+        //    _result = new ObjectResult(_authenticationResult);
+        //    return _result;
+        //}
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
@@ -108,8 +160,8 @@ namespace ChatBot.Controllers
         [HttpPost]
         public IActionResult Register([FromBody] RegistrationViewModel user)
         {
-            IActionResult result = new ObjectResult(false);
-            GenericResult registrationResult = null;
+            IActionResult _result = new ObjectResult(false);
+            GenericResult _registrationResult = null;
 
             try
             {
@@ -119,7 +171,7 @@ namespace ChatBot.Controllers
 
                     if (_user != null)
                     {
-                        registrationResult = new GenericResult()
+                        _registrationResult = new GenericResult()
                         {
                             Succeeded = true,
                             Message = "Registration succeeded"
@@ -128,7 +180,7 @@ namespace ChatBot.Controllers
                 }
                 else
                 {
-                    registrationResult = new GenericResult()
+                    _registrationResult = new GenericResult()
                     {
                         Succeeded = false,
                         Message = "Invalid fields."
@@ -137,7 +189,7 @@ namespace ChatBot.Controllers
             }
             catch (Exception ex)
             {
-                registrationResult = new GenericResult()
+                _registrationResult = new GenericResult()
                 {
                     Succeeded = false,
                     Message = ex.Message
@@ -147,8 +199,8 @@ namespace ChatBot.Controllers
                 _loggingRepository.Commit();
             }
 
-            result = new ObjectResult(registrationResult);
-            return result;
+            _result = new ObjectResult(_registrationResult);
+            return _result;
         }
     }
 }
