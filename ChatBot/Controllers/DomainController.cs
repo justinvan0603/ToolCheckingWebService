@@ -10,6 +10,10 @@ using ChatBot.Model.Models;
 using ChatBot.Service;
 using ChatBot.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using ChatBot.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -18,18 +22,18 @@ namespace ChatBot.Controllers
     [Route("api/[controller]")]
     public class DomainsController : Controller
     {
-        IBotDomainService _botDomainService;
-        readonly ILoggingRepository _loggingRepository;
-        //public DomainsController(IBotDomainService botDomainService, ILoggingRepository loggingRepository)
-        //{
-        //    _botDomainService = botDomainService;
-        //    _loggingRepository = loggingRepository;
-        //}
-        int _page = 1;
-        int _pageSize = 8;
-        public IEnumerable<DomainViewModel> Get()
-        {
 
+        int _page = 1;
+        int _pageSize = 10;
+        /*
+        @USER varchar(15) = NULL,
+	    @DOMAIN varchar(500) = NULL,
+	    @RECORD_STATUS varchar(1) = NULL,
+	    @CREATE_DT varchar(20) = NULL
+         */
+        [HttpGet]
+        public async Task<IEnumerable<ListdomainObject>> Get(string userid)
+        {
             var pagination = Request.Headers["Pagination"];
 
             if (!string.IsNullOrEmpty(pagination))
@@ -39,283 +43,77 @@ namespace ChatBot.Controllers
                 int.TryParse(vals[1], out _pageSize);
             }
 
+            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+            string command = $"dbo.Listdomain_Search @USER = '{userid}', @DOMAIN = '',@RECORD_STATUS = '1',@CREATE_DT=''";
+            var result = await context.ListdomainObject.FromSql(command).ToArrayAsync();
+            int currentPage = _page;
+            int currentPageSize = _pageSize;
 
-            IEnumerable<DomainViewModel> domainVm = null;
-            // PaginationSet<DomainViewModel> pagedSet = null;
-            try
-            {
-                // int totalRow = 0;
+            var totalRecord = result.Count();
+            var totalPages = (int)Math.Ceiling((double)totalRecord / _pageSize);
 
-                var model = _botDomainService.GetAll();
-                //totalRow = domains.Count();
-                //var query = domains.OrderByDescending(x => x.CreatedDate).Skip(page * pageSize).Take(pageSize);
+            var domains = result.Skip((currentPage - 1) * currentPageSize).Take(currentPageSize);
+            Response.AddPagination(_page, _pageSize, totalRecord, totalPages);
+            IEnumerable<ListdomainObject> listPagedDomain = Mapper.Map<IEnumerable<ListdomainObject>, IEnumerable<ListdomainObject>>(domains);
 
-                int currentPage = _page;
-                int currentPageSize = _pageSize;
 
-                var totalRecord = model.Count();
-                var totalPages = (int)Math.Ceiling((double)totalRecord / _pageSize);
+            return listPagedDomain;
 
-                var domains = model.Skip((currentPage - 1) * currentPageSize).Take(currentPageSize);
-                // IEnumerable<DomainViewModel> domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
-                domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
 
-                //pagedSet = new PaginationSet<DomainViewModel>()
-                //{
-                //    Page = currentPage,
-                //    TotalCount = totalPages,
-                //    TotalPages = (int)Math.Ceiling((decimal)totalRecord / currentPageSize),
-                //    Items = domainVm
-                //};
-                Response.AddPagination(_page, _pageSize, totalRecord, totalPages);
-            }
-            catch (Exception ex)
-            {
-                _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
-                _loggingRepository.Commit();
-            }
-            return domainVm;
         }
-
-        //public IEnumerable<DomainViewModel> Get(string DOMAIN_like="", int _page = 1, int _limit = 20, int _start=1, int _end=1 )
-        //{
-        //     IEnumerable<DomainViewModel> domainVm = null;
-        //   // PaginationSet<DomainViewModel> pagedSet = null;
-        //    try
-        //    {
-        //        // int totalRow = 0;
-
-        //        var model = _botDomainService.GetAll(DOMAIN_like);
-        //        //totalRow = domains.Count();
-        //        //var query = domains.OrderByDescending(x => x.CreatedDate).Skip(page * pageSize).Take(pageSize);
-
-        //        int currentPage = _page;
-        //        int currentPageSize = _limit;
-
-        //        var totalRecord = model.Count();
-        //        var totalPages = (int)Math.Ceiling((double)totalRecord / _limit);
-
-        //        var domains = model.Skip((currentPage-1) * currentPageSize).Take(currentPageSize);
-        //       // IEnumerable<DomainViewModel> domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
-        //        domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);
-
-        //        //pagedSet = new PaginationSet<DomainViewModel>()
-        //        //{
-        //        //    Page = currentPage,
-        //        //    TotalCount = totalPages,
-        //        //    TotalPages = (int)Math.Ceiling((decimal)totalRecord / currentPageSize),
-        //        //    Items = domainVm
-        //        //};
-        //        Response.AddPagination(_page, _limit, totalRecord, totalPages);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
-        //        _loggingRepository.Commit();
-        //    }
-        //    return domainVm;
-        //}
-
-
-        //public IEnumerable<DomainViewModel> Get()
-        //{
-        //    IEnumerable<DomainViewModel> domainVm = null;
-        //    try
-        //    {
-        //        var domains = _botDomainService.GetAll();
-        //        domainVm = Mapper.Map<IEnumerable<BOT_DOMAIN>, IEnumerable<DomainViewModel>>(domains);   
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
-        //        _loggingRepository.Commit();
-        //    }
-        //    return domainVm;
-        //}
-
-        [HttpGet("{id:int}", Name = "GetDomain")]
-        public DomainViewModel Get(int id)
+        [HttpDelete("{id}")]
+        public async Task<int> Delete(int id)
         {
-            DomainViewModel domainVm = null;
-            try
-            {
-                var domains = _botDomainService.GetById(id);
-                domainVm = Mapper.Map<BOT_DOMAIN, DomainViewModel>(domains);
-            }
-            catch (Exception ex)
-            {
-                _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
-                _loggingRepository.Commit();
-            }
-            return domainVm;
+            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+            string command = $"dbo.Listdomain_Del @ID={id}";
+            var result = await context.Database.ExecuteSqlCommandAsync(command, cancellationToken: CancellationToken.None);
+            return result;
         }
-
+        /*
+         @p_DOMAIN	varchar(200)  = NULL,
+@p_USER_ID	varchar(15)  = NULL,
+@p_USERNAME	varchar(50)  = NULL,
+@p_DESCRIPTION	nvarchar(500)  = NULL,
+@p_RECORD_STATUS	varchar(1)  = NULL,
+@p_AUTH_STATUS	varchar(1)  = NULL,
+@p_CREATE_DT	VARCHAR(20) = NULL,
+@p_APPROVE_DT	VARCHAR(20) = NULL,
+@p_EDIT_DT	VARCHAR(20) = NULL,
+@p_MAKER_ID	varchar(15)  = NULL,
+@p_CHECKER_ID	varchar(15)  = NULL,
+@p_EDITOR_ID	varchar(15)  = NULL
+         */
         [HttpPost]
-        public IActionResult Create([FromBody]DomainViewModel botDomain)
+        public async Task<int> Post([FromBody]ListdomainObject domain)
         {
-
-            IActionResult _result = new ObjectResult(false);
-            GenericResult _addResult = null;
-            try
-            {
-
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-          //      BOT_DOMAIN _newBotDomain = Mapper.Map<DomainViewModel, BOT_DOMAIN>(botDomain);
-
-                BOT_DOMAIN _newBotDomain = PropertyCopy.Copy<BOT_DOMAIN, DomainViewModel>(botDomain);
-
-
-                _newBotDomain.CreatedDate = DateTime.Now;
-                _newBotDomain.DOMAIN_ID = 1;
-
-                _botDomainService.Add(_newBotDomain);
-                _botDomainService.Save();
-
-
-
-                _addResult = new GenericResult()
-                {
-                    Succeeded = true,
-                    Message = "Add removed."
-                };
-            }
-            catch (Exception ex)
-            {
-                _addResult = new GenericResult()
-                {
-                    Succeeded = false,
-                    Message = ex.Message
-                };
-
-                _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
-                _loggingRepository.Commit();
-            }
-
-            _result = new ObjectResult(_addResult);
-            return _result;
+            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+            string command = $"dbo.Listdomain_Ins @p_DOMAIN = '{domain.DOMAIN}',@p_USER_ID = '{domain.USER_ID}',@p_USERNAME='{domain.USERNAME}',@p_DESCRIPTION='{domain.DESCRIPTION}',@p_RECORD_STATUS='1',@p_AUTH_STATUS ='U',@p_CREATE_DT = '{DateTime.Now}',@p_APPROVE_DT = '',@p_EDIT_DT ='',@p_MAKER_ID = 'thieu1234',@p_CHECKER_ID ='',@p_EDITOR_ID=''";
+            var result = await context.Database.ExecuteSqlCommandAsync(command, cancellationToken: CancellationToken.None);
+            return result;
         }
-
+        /*
+         @p_ID	int = NULL,
+@p_DOMAIN	varchar(200) = NULL ,
+@p_USER_ID	varchar(15) = NULL ,
+@p_USERNAME	varchar(50) = NULL ,
+@p_DESCRIPTION	nvarchar(500) = NULL ,
+@p_RECORD_STATUS	varchar(1) = NULL ,
+@p_AUTH_STATUS	varchar(1) = NULL ,
+@p_CREATE_DT	VARCHAR(20) = NULL,
+@p_APPROVE_DT	VARCHAR(20) = NULL,
+@p_EDIT_DT	VARCHAR(20) = NULL,
+@p_MAKER_ID	varchar(15) = NULL ,
+@p_CHECKER_ID	varchar(15) = NULL ,
+@p_EDITOR_ID	varchar(15) = NULL 
+         */
         [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody]DomainViewModel domainViewModel)
+        public async Task<int> Put(int id,[FromBody]ListdomainObject domain)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-         //   BOT_DOMAIN botDomain = _botDomainService.GetById(id);
-
-            //if (botDomain == null)
-            //{
-            //    return NotFound();
-            //}
-            //else
-            //{
-                BOT_DOMAIN botDomainUpd = PropertyCopy.Copy<BOT_DOMAIN, DomainViewModel>(domainViewModel);
-                botDomainUpd.UpdatedDate = DateTime.Now;
-                _botDomainService.Update(botDomainUpd);
-                _botDomainService.Save();
-
-
-        //    }
-          //  schedule = Mapper.Map<Schedule, ScheduleViewModel>(_scheduleDb);
-            return new NoContentResult();
+            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+            string command = $"dbo.Listdomain_Upd @p_ID= {domain.ID},@p_DOMAIN = '{domain.DOMAIN}',@p_USER_ID='{domain.USER_ID}',@p_USERNAME='{domain.USERNAME}',@p_DESCRIPTION = '{domain.DESCRIPTION}',@p_RECORD_STATUS = '{domain.RECORD_STATUS}',@p_AUTH_STATUS = '{domain.AUTH_STATUS}',@p_CREATE_DT = '{domain.CREATE_DT}',@p_APPROVE_DT = '{domain.APPROVE_DT}',@p_EDIT_DT = '{domain.EDIT_DT}',@p_MAKER_ID = '{domain.MAKER_ID}',@p_CHECKER_ID = '{domain.CHECKER_ID}',@p_EDITOR_ID = '{domain.EDITOR_ID}'";
+            var result = await context.Database.ExecuteSqlCommandAsync(command, cancellationToken: CancellationToken.None);
+            return result;
         }
-
-
-        [HttpDelete("{id:int}")]
-        public IActionResult Delete(int id)
-        {
-            IActionResult _result = new ObjectResult(false);
-            GenericResult _removeResult = null;
-
-            try
-            {
-                _botDomainService.Delete(id);
-                _botDomainService.Save();
-
-                _removeResult = new GenericResult()
-                {
-                    Succeeded = true,
-                    Message = "Domain removed."
-                };
-            }
-            catch (Exception ex)
-            {
-                _removeResult = new GenericResult()
-                {
-                    Succeeded = false,
-                    Message = ex.Message
-                };
-
-                _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
-                _loggingRepository.Commit();
-            }
-
-            _result = new ObjectResult(_removeResult);
-            return _result;
-        }
-
-       
-
-
-        //[HttpPost]
-        //[Route("ThemTenMien")]
-        //public IActionResult ThemTenMien(String DOMAIN, int RECORD_STATUS)
-        //{
-
-        //    IActionResult _result = new ObjectResult(false);
-        //    GenericResult _addResult = null;
-        //    try
-        //    {
-
-        //        if (!ModelState.IsValid)
-        //        {
-        //            return BadRequest(ModelState);
-        //        }
-
-        //        BOT_DOMAIN _newBotDomain = new BOT_DOMAIN()
-        //        {
-        //            DOMAIN = DOMAIN,
-        //            CreatedBy = "fds",
-        //            DOMAIN_ID = 1,
-        //            RECORD_STATUS = RECORD_STATUS,
-        //            Status = true
-        //        };
-
-        //        _botDomainService.Add(_newBotDomain);
-        //        _botDomainService.Save();
-
-
-
-        //        _addResult = new GenericResult()
-        //        {
-        //            Succeeded = true,
-        //            Message = "Add removed."
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _addResult = new GenericResult()
-        //        {
-        //            Succeeded = false,
-        //            Message = ex.Message
-        //        };
-
-        //        _loggingRepository.Add(new Error() { Message = ex.Message, StackTrace = ex.StackTrace, DateCreated = DateTime.Now });
-        //        _loggingRepository.Commit();
-        //    }
-
-        //    _result = new ObjectResult(_addResult);
-        //    return _result;
-        //}
-
-
-
 
     }
 }

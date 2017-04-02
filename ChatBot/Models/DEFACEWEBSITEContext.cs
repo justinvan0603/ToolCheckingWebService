@@ -24,7 +24,9 @@ namespace ChatBot.Models
         public virtual DbSet<UserDomain> UserDomain { get; set; }
         public virtual DbSet<Userconfig> Userconfig { get; set; }
         public virtual DbSet<Users> Users { get; set; }
-
+        public virtual DbSet<UserConfigObject> UserConfigObject { get; set; }
+        public virtual DbSet<ListdomainObject> ListdomainObject { get; set; }
+        public virtual DbSet<OptionSearchObject> OptionSearchObject { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.

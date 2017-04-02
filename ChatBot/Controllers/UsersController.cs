@@ -28,7 +28,7 @@ namespace ChatBot.Controllers
         int _page = 1;
         int _pageSize = 10;
         [HttpGet]
-        public async Task<IEnumerable<Users>> Get()
+        public async Task<IEnumerable<Users>> Get(int parentid, string parentname)
         {
             var pagination = Request.Headers["Pagination"];
 
@@ -56,6 +56,53 @@ namespace ChatBot.Controllers
 
 
         }
+        [HttpGet]
+        [Route("GetListByParent")]
+        public async Task<IEnumerable<Users>> GetListByParent(int parentid, string parentname)
+        {
+            var pagination = Request.Headers["Pagination"];
+
+
+            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+            var result = await context.Users.FromSql("dbo.Users_ByParent @p_PARENT_ID = {0}, @p_PARENT_NAME = {1}", 1056, "thieu1234").ToArrayAsync();
+            //int currentPage = _page;
+            //int currentPageSize = _pageSize;
+
+            //var totalRecord = result.Count();
+            //var totalPages = (int)Math.Ceiling((double)totalRecord / _pageSize);
+
+            //var users = result.Skip((currentPage - 1) * currentPageSize).Take(currentPageSize);
+            //Response.AddPagination(_page, _pageSize, totalRecord, totalPages);
+            //IEnumerable<Users> listPagedUser = Mapper.Map<IEnumerable<Users>, IEnumerable<Users>>(users);
+
+
+            return result;
+
+
+        }
+        [HttpGet]
+        [Route("GetUserById")]
+        public async Task<Users> GetUserById(int userid, string username)
+        {
+            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+                var result = await context.Users.FromSql("dbo.Users_ById @p_USERNAME = {0}, @p_USERID = {1}", username, userid).SingleAsync();
+                return result;
+        }
+        [HttpPost]
+        public async Task<int> Post([FromBody]UserObject user)
+        {
+
+            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+            string pass = MD5Encoder.MD5Hash(user.Password);
+            XElement xmldata = new XElement(new XElement("Root"));
+            XElement x = new XElement("Domain", new XElement("DOMAIN", user.Domain),
+                                               new XElement("DESCRIPTION", user.DomainDesc));
+            xmldata.Add(x);
+
+            string command = $"dbo.Users_Ins @p_USERNAME = '{user.Username}', @p_FULLNAME='{user.Fullname}',@p_PASSWORD = '{pass}',@p_EMAIL = '{user.Email}',@p_PHONE = {user.Phone},@p_PARENT_ID = {user.ParentId},@p_DESCRIPTION = '{user.Description}',@p_RECORD_STATUS = '{user.RecordStatus}',@p_AUTH_STATUS = '{user.AuthStatus}',@p_CREATE_DT = '{DateTime.Now}',@p_APPROVE_DT ='',@p_EDIT_DT='',@p_MAKER_ID ='{user.MakerId}',@p_CHECKER_ID = '{user.CheckerId}',@p_EDITOR_ID = '{user.EditorId}',@DOMAIN ={xmldata}";
+            var result = await context.Database.ExecuteSqlCommandAsync(command, cancellationToken: CancellationToken.None);
+            return result;
+        }
         /*
          * @p_USERNAME	varchar(50)  = NULL,
             @p_FULLNAME	nvarchar(200)  = NULL,
@@ -74,24 +121,8 @@ namespace ChatBot.Controllers
             @p_EDITOR_ID	varchar(15)  = NULL,
             @DOMAIN XML = NULL
          */
-         
-        [HttpPost]
-        public async Task<int> Post([FromBody]UserObject users)
-        {
 
-            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
-            string pass = MD5Encoder.MD5Hash(users.Password);
-            XElement xmldata = new XElement(new XElement("Root"));
-            XElement x = new XElement("Domain", new XElement("DOMAIN", users.Domain),
-                                               new XElement("DESCRIPTION", users.DomainDesc));
-            xmldata.Add(x);
 
-            string command = $"dbo.Users_Ins @p_USERNAME = '{users.Username}', @p_FULLNAME='{users.Fullname}',@p_PASSWORD = '{pass}',@p_EMAIL = '{users.Email}',@p_PHONE = {users.Phone},@p_PARENT_ID = {users.ParentId},@p_DESCRIPTION = '{users.Description}',@p_RECORD_STATUS = '{users.RecordStatus}',@p_AUTH_STATUS = '{users.AuthStatus}',@p_CREATE_DT = '{DateTime.Now}',@p_APPROVE_DT ='',@p_EDIT_DT='',@p_MAKER_ID ='{users.MakerId}',@p_CHECKER_ID = '{users.CheckerId}',@p_EDITOR_ID = '{users.EditorId}',@DOMAIN ={xmldata}";
-            var result = await context.Database.ExecuteSqlCommandAsync(command, cancellationToken: CancellationToken.None);
-            return result;
-            //var i = 1;
-            ///return 1;
-        }
         /*@p_ID	int = NULL,
 @p_USERNAME	varchar(50)  = NULL,
 @p_FULLNAME	nvarchar(200)  = NULL,
@@ -109,22 +140,31 @@ namespace ChatBot.Controllers
 @p_CHECKER_ID	varchar(15)  = NULL,
 @p_EDITOR_ID	varchar(15)  = NULL,
 @DOMAIN XML = NULL,*/
-        [HttpPut]
-        public async Task<int> Put(Users user)
+        [HttpPut("{id}")]
+        public async Task<int> Put(int id,[FromBody]Users user)
         {
             DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
             string password = MD5Encoder.MD5Hash(user.Password);
-            string command = $"dbo.Users_Upd @p_ID={user.Id},@p_USERNAME = {user.Username},@p_FULLNAME={user.Fullname},@p_PASSWORD={password}";
+            string command = $"dbo.Users_Upd @p_ID={user.Id},@p_USERNAME = '{user.Username}',@p_FULLNAME='{user.Fullname}',@p_PASSWORD='{password}',@p_EMAIL = '{user.Email}',@p_PHONE={user.Phone},@p_PARENT_ID={user.ParentId},@p_DESCRIPTION='{user.Description}',@p_RECORD_STATUS='{user.RecordStatus}',@p_AUTH_STATUS='{user.AuthStatus}',@p_CREATE_DT='{user.CreateDt}',@p_APPROVE_DT='{user.ApproveDt}',@p_EDIT_DT='{user.EditDt}',@p_MAKER_ID='{user.MakerId}',@p_CHECKER_ID='{user.CheckerId}',@p_EDITOR_ID='{user.EditorId}'";
             var result = await context.Database.ExecuteSqlCommandAsync(command, cancellationToken: CancellationToken.None);
             return result;
         }
-        [HttpGet("{id:int}", Name = "GetUser")]
-        public async Task<IEnumerable<Users>> Get(int id)
-        {
-            DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
-            var result = await context.Users.FromSql("dbo.Users_ByParent @p_USERNAME = {0}, @p_USERID = {1}", "thieu1234", 1056).ToArrayAsync();
-            return result;
-        }
+
+        //[Route("{username?}/{userid}", Name = "GetUserById")]
+        //public async Task<IEnumerable<Users>> Get(string username, int userid)
+        //{
+            
+        //    DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+        //    var result = await context.Users.FromSql("dbo.Users_ById @p_USERNAME = {0}, @p_USERID = {1}", username, userid).ToArrayAsync();
+        //    return result;
+        //}
+        //[HttpGet("{id:int}", Name = "GetUserByParent")]
+        //public async Task<IEnumerable<Users>> GetByParentId(int id)
+        //{
+        //    DEFACEWEBSITEContext context = new DEFACEWEBSITEContext();
+        //    var result = await context.Users.FromSql("dbo.Users_ByParent @p_USERNAME = {0}, @p_USERID = {1}", "thieu1234", 1056).ToArrayAsync();
+        //    return result;
+        //}
         //[Route("Delete")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
